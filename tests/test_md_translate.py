@@ -1,4 +1,6 @@
+from dl_translator.cli import _target_from_detected_source
 from dl_translator.md_translate import split_front_matter, translate_full_markdown
+from dl_translator.ocr_cleanup import clean_ocr_markdown, clean_ocr_token
 
 
 def test_split_front_matter():
@@ -24,3 +26,22 @@ def test_translate_skips_fenced_code():
     assert "```python" in out
     assert "print(1)" in out
     assert "T:print" not in out
+
+
+def test_detected_spanish_targets_english():
+    assert _target_from_detected_source("ES") == "EN-US"
+
+
+def test_detected_english_targets_spanish():
+    assert _target_from_detected_source("EN") == "ES"
+
+
+def test_clean_ocr_token_repairs_spanish_symbol_confusion():
+    assert clean_ocr_token("h0la", "ES") == "hola"
+
+
+def test_clean_ocr_markdown_preserves_code_fences():
+    md = "Texto h0la\n\n```python\nh0la = 1\n```\n"
+    out = clean_ocr_markdown(md, "ES")
+    assert "Texto hola" in out
+    assert "h0la = 1" in out

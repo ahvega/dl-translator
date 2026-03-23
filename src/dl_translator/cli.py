@@ -7,6 +7,7 @@ from typing import Optional
 import typer
 from dotenv import load_dotenv
 from rich.console import Console
+from rich.prompt import Confirm
 from rich.prompt import Prompt
 
 from dl_translator.discovery import discover_files, has_glob_pattern
@@ -16,6 +17,7 @@ from dl_translator.extractors.image import extract_image
 from dl_translator.extractors.md import extract_markdown_file
 from dl_translator.extractors.pdf import extract_pdf
 from dl_translator.md_translate import translate_full_markdown
+from dl_translator.ocr_cleanup import clean_ocr_markdown
 from dl_translator.output_docx import markdown_to_docx
 from dl_translator.translate import (
     detect_source_lang,
@@ -42,6 +44,13 @@ def _suffix_for_target(lang: str) -> str:
     if u.startswith("ES"):
         return "es"
     return "en"
+
+
+def _target_from_detected_source(source_lang: str) -> str:
+    u = source_lang.upper()
+    if u.startswith("ES"):
+        return "EN-US"
+    return "ES"
 
 
 def _extract_to_markdown(path: Path, force_ocr: bool, gpu: bool) -> ExtractResult:
@@ -160,6 +169,7 @@ def run(
         translator = get_translator()
 
     failures = 0
+    translated_md_outputs: list[tuple[Path, Path]] = []
     for path in files:
         try:
             md = _extract_to_markdown(path, force_ocr=force_ocr, gpu=gpu)
@@ -177,12 +187,14 @@ def run(
             if target_lang:
                 target = normalize_target_for_deepl(target_lang)
             else:
-                target = "ES" if source == "ES" else "EN-US"
+                target = _target_from_detected_source(source or "EN")
+            source_markdown = md.markdown
 
             if md.used_ocr:
                 source_suf = _suffix_for_target(source)
                 source_md_path = path.parent / f"{path.stem}_{source_suf}.md"
-                source_md_path.write_text(md.markdown, encoding="utf-8")
+                source_markdown = clean_ocr_markdown(source_markdown, source or "EN")
+                source_md_path.write_text(source_markdown, encoding="utf-8")
                 console.print(
                     f"[green]OK[/green] {path} -> {source_md_path} (OCR source)"
                 )
@@ -190,7 +202,9 @@ def run(
             def chunk_fn(s: str) -> str:
                 return translate_text_chunks(translator, s, target_lang=target)
 
-            translated = translate_full_markdown(md.markdown, chunk_fn)
+            translated = translate_full_markdown(source_markdown, chunk_fn)
+            if md.used_ocr:
+                translated = clean_ocr_markdown(translated, target)
             suf = _suffix_for_target(target)
             base = path.parent / f"{path.stem}_{suf}"
 
@@ -198,6 +212,7 @@ def run(
                 out_path = base.with_suffix(".md")
                 out_path.write_text(translated, encoding="utf-8")
                 console.print(f"[green]OK[/green] {path} -> {out_path}")
+                translated_md_outputs.append((out_path, path.parent))
             else:
                 docx_path = base.with_suffix(".docx")
                 markdown_to_docx(translated, docx_path, resource_parent=path.parent)
@@ -212,6 +227,19 @@ def run(
     if failures:
         console.print(f"[yellow]Completed with {failures} error(s).[/yellow]")
         raise typer.Exit(code=1)
+
+    if fmt == "md" and translated_md_outputs and sys.stdin.isatty():
+        if Confirm.ask(
+            "Create DOCX copy/copies from the translated Markdown output?", default=False
+        ):
+            for md_path, resource_parent in translated_md_outputs:
+                docx_path = md_path.with_suffix(".docx")
+                markdown_to_docx(
+                    md_path.read_text(encoding="utf-8"),
+                    docx_path,
+                    resource_parent=resource_parent,
+                )
+                console.print(f"[green]OK[/green] {md_path} -> {docx_path}")
 
 
 def main() -> None:

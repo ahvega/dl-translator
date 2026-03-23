@@ -31,12 +31,14 @@ The pipeline is:
 - **Input formats:** PDF, DOCX, Markdown, PNG, JPG, JPEG, WebP, TIFF, and BMP.
 - **Scanned PDF support:** pages without a text layer are rasterized and OCR'd with EasyOCR.
 - **OCR reference output:** OCR-based inputs also keep a full Markdown copy of the extracted source text in the original detected language for review and traceability.
+- **OCR cleanup pass:** OCR-based Markdown goes through a lightweight word-validity cleanup pass that attempts to repair common character confusions such as `0/o`, `1/l/i`, `@/a`, and `$/s`.
 - **Heading and table preservation:** DOCX headings and tables are mapped into Markdown; text PDFs use PyMuPDF's Markdown extraction when available.
 - **Front matter safety:** YAML front matter in Markdown files is preserved unchanged.
 - **Code fence safety:** fenced code blocks are excluded from translation.
 - **Asset export:** embedded images from PDF and DOCX are exported to `{stem}_assets/` and linked from Markdown.
 - **Batch processing:** recursive folder walking is enabled by default.
 - **Flexible output:** write `.md` or `.docx`; interactive runs can prompt for the format if `--format` is omitted.
+- **Final DOCX prompt:** when translated Markdown output is created in an interactive shell, the tool can offer to generate DOCX copies at the end of the run.
 - **Windows-friendly usage:** documented with PowerShell examples and venv setup.
 
 ## How output files are named
@@ -87,7 +89,7 @@ input file/folder/glob
 | **Pandoc** (optional) | Required only for `--format docx` |
 | **Internet access** | DeepL API and first-time EasyOCR model downloads |
 
-EasyOCR pulls in PyTorch. The first install can take time and may download large wheels. The first OCR run may also download model files.
+EasyOCR pulls in PyTorch. The first install can take time and may download large wheels. The first OCR run may also download model files. OCR cleanup uses `wordfreq` and `rapidfuzz` to make conservative post-processing corrections on likely OCR mistakes.
 
 If `pip install` fails on Windows with a file-lock error such as “the process cannot access the file because it is being used by another process”, close any Python processes using that virtual environment and retry.
 
@@ -158,6 +160,8 @@ dl-translate --format docx ".\document.pdf"
 ```powershell
 dl-translate ".\document.pdf"
 ```
+
+If you choose Markdown output in an interactive shell, the CLI can ask at the end whether you also want DOCX copies of the translated results.
 
 ### Process a folder recursively
 
@@ -246,6 +250,7 @@ DeepL requests are chunked at paragraph boundaries so long documents can be tran
 
 - Uses **Pillow** + **EasyOCR**.
 - OCR text is normalized into a temporary Markdown document before translation.
+- A final cleanup pass attempts to fix some obvious OCR mistakes using language-aware word scoring.
 
 ## Production deployment
 
