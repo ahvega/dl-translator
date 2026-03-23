@@ -38,6 +38,7 @@ The pipeline is:
 - **Asset export:** embedded images from PDF and DOCX are exported to `{stem}_assets/` and linked from Markdown.
 - **Batch processing:** recursive folder walking is enabled by default.
 - **Flexible output:** write `.md` or `.docx`; interactive runs can prompt for the format if `--format` is omitted.
+- **DOCX font normalization:** generated Word documents are normalized to use **Arial**.
 - **Final DOCX prompt:** when translated Markdown output is created in an interactive shell, the tool can offer to generate DOCX copies at the end of the run.
 - **Windows-friendly usage:** documented with PowerShell examples and venv setup.
 

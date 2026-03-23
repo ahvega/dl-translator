@@ -81,6 +81,25 @@ def _resolve_output_format(fmt: Optional[str]) -> str:
     return "md"
 
 
+def _convert_markdown_outputs_to_docx(
+    translated_md_outputs: list[tuple[Path, Path]],
+) -> int:
+    docx_failures = 0
+    for md_path, resource_parent in translated_md_outputs:
+        docx_path = md_path.with_suffix(".docx")
+        try:
+            markdown_to_docx(
+                md_path.read_text(encoding="utf-8"),
+                docx_path,
+                resource_parent=resource_parent,
+            )
+            console.print(f"[green]OK[/green] {md_path} -> {docx_path}")
+        except Exception as e:
+            docx_failures += 1
+            console.print(f"[red]Error[/red] {md_path}: {e}")
+    return docx_failures
+
+
 def run(
     paths: list[str] = typer.Argument(
         ...,
@@ -232,14 +251,12 @@ def run(
         if Confirm.ask(
             "Create DOCX copy/copies from the translated Markdown output?", default=False
         ):
-            for md_path, resource_parent in translated_md_outputs:
-                docx_path = md_path.with_suffix(".docx")
-                markdown_to_docx(
-                    md_path.read_text(encoding="utf-8"),
-                    docx_path,
-                    resource_parent=resource_parent,
+            docx_failures = _convert_markdown_outputs_to_docx(translated_md_outputs)
+            if docx_failures:
+                console.print(
+                    f"[yellow]Completed with {docx_failures} DOCX conversion error(s).[/yellow]"
                 )
-                console.print(f"[green]OK[/green] {md_path} -> {docx_path}")
+                raise typer.Exit(code=1)
 
 
 def main() -> None:
