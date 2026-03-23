@@ -151,6 +151,7 @@ def run(
 
     # Extract-only mode: no translation pipeline
     if extract_only:
+        extract_failures = 0
         for path in files:
             try:
                 md = _extract_to_markdown(path, force_ocr=force_ocr, gpu=gpu)
@@ -158,10 +159,16 @@ def run(
                 out.write_text(md.markdown, encoding="utf-8")
                 console.print(f"[green]OK[/green] {path} -> {out}")
             except Exception as e:
+                extract_failures += 1
                 console.print(f"[red]Error[/red] {path}: {e}")
                 if not continue_on_error:
                     raise typer.Exit(code=1)
-        raise typer.Exit(code=0)
+        if extract_failures:
+            console.print(
+                f"[yellow]Completed with"
+                f" {extract_failures} error(s).[/yellow]"
+            )
+        raise typer.Exit(code=1 if extract_failures else 0)
 
     # Full phased pipeline
     translator = get_translator()

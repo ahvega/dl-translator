@@ -26,7 +26,7 @@ from pathlib import Path
 def find_venv() -> Path | None:
     """Locate the dl-translator venv by checking common locations."""
     candidates = [
-        Path(__file__).resolve().parents[3] / ".venv",  # repo root
+        Path(__file__).resolve().parents[4] / ".venv",  # repo root
         Path("E:/MyDevTools/dl-translator/.venv"),
         Path.cwd() / ".venv",
     ]
