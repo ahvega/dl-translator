@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dl-translator"
+version = "0.1.0"
+description = "Convert documents to Markdown and translate EN↔ES with DeepL"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "typer>=0.12.0",
+    "deepl>=1.18.0",
+    "python-dotenv>=1.0.0",
+    "pymupdf>=1.24.0",
+    "python-docx>=1.1.2",
+    "pyyaml>=6.0.1",
+    "easyocr>=1.7.1",
+    "numpy>=1.26.0",
+    "Pillow>=10.0.0",
+    "pypandoc>=1.13",
+    "rich>=13.7.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+dl-translate = "dl_translator.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
