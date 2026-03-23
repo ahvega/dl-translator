@@ -11,3 +11,4 @@ class ExtractResult:
     markdown: str
     assets_dir: Path | None = None
     asset_paths: list[Path] = field(default_factory=list)
+    used_ocr: bool = False

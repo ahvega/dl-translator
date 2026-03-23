@@ -7,6 +7,7 @@ def markdown_to_docx(
     md_text: str,
     output_path: Path,
     resource_parent: Path | None = None,
+    author: str | None = None,
 ) -> None:
     """Write DOCX from Markdown using Pandoc (pypandoc)."""
     import pypandoc
@@ -14,6 +15,8 @@ def markdown_to_docx(
     extra_args: list[str] = []
     if resource_parent is not None and resource_parent.is_dir():
         extra_args.append(f"--resource-path={resource_parent}")
+    if author:
+        extra_args.extend(["--metadata", f"author={author}"])
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     try:

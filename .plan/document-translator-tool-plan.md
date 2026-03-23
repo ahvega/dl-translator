@@ -1,5 +1,7 @@
 # Plan: Document → Markdown → DeepL Translation Tool (Python)
 
+**Author:** Adalberto H. Vega
+
 ## Goal
 
 Deliver a **Python CLI** that ingests **PDF** (text or scanned), **DOCX**, **Markdown**, or **raster images**, normalizes content to **Markdown**, then **translates** between **English and Spanish** using the **DeepL API** (free tier). The API key will be supplied later via **`.env`** (`DEEPL_AUTH_KEY`).
@@ -7,7 +9,7 @@ Deliver a **Python CLI** that ingests **PDF** (text or scanned), **DOCX**, **Mar
 ## Context & Constraints
 
 | Constraint | Detail |
-|-------------|--------|
+| ------------- | -------- |
 | Translation | DeepL API Free: **500,000 characters per month** (source text, Unicode code points); text and document usage count together. Plan for optional **usage/quota check** before large batches. |
 | Languages | **EN ↔ ES** only for MVP; direction inferred from detected source language or overridden by flags. |
 | Batch | Single file, **folder** (non-recursive vs recursive as a flag), and/or **wildcard/glob** pattern. |
@@ -54,7 +56,7 @@ flowchart LR
 ## Supported Formats — Technical Approach
 
 | Format | Library / approach | Notes |
-|--------|---------------------|--------|
+| -------- | --------------------- | -------- |
 | **PDF (text)** | **PyMuPDF** (`fitz`) | Extract text per page; emit `# Page n` or `---` separators to keep structure readable in MD. |
 | **PDF (scanned)** | Rasterize pages with **PyMuPDF** → **EasyOCR** | If extracted text length per page is below a threshold, fall back to OCR pipeline. |
 | **DOCX** | **python-docx** | Map `Heading 1` → `#`, etc., when possible; else paragraphs as plain blocks. |
@@ -73,7 +75,7 @@ flowchart LR
 ## CLI Design (Implemented)
 
 | Parameter | Purpose |
-|-----------|---------|
+| ----------- | --------- |
 | `paths` | One or more file paths, directories, or glob patterns. |
 | `--format`, `-f` | Output format: `md` or `docx`. If omitted in an interactive shell, the user is prompted. |
 | `--no-recursive` | Directory inputs are recursive by default; this disables subfolder traversal. |
@@ -88,7 +90,7 @@ flowchart LR
 
 ## Project Layout (Greenfield)
 
-```
+```text
 dl-translator/
   pyproject.toml          # deps + console script entry point
   README.md               # setup: Python, Tesseract, Poppler (Windows), .env
@@ -125,7 +127,7 @@ dl-translator/
 ## Risks & Mitigations
 
 | Risk | Mitigation |
-|------|------------|
+| ------ | ------------ |
 | Complex DOCX/PDF layout | MVP: prioritize **readable** MD, not pixel-perfect layout; document limitations. |
 | Huge files vs monthly quota | Char count preflight; `--dry-run`; warn when exceeding soft threshold. |
 | DeepL request size limits | Split text into chunks with paragraph boundaries; merge after translate. |

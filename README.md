@@ -9,6 +9,8 @@
 [![Pandoc optional](https://img.shields.io/badge/DOCX%20export-Pandoc-1A1A1A?logo=pandoc&logoColor=white)](https://pandoc.org/)
 [![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white)](https://pytest.org/)
 
+**Author:** Adalberto H. Vega
+
 Convert **PDF**, **DOCX**, **Markdown**, or **images** into **Markdown**, then translate the content between **English** and **Spanish** with the [DeepL API](https://www.deepl.com/pro-api). The tool is designed for local and batch workflows: it detects supported files, extracts readable Markdown, preserves as much structure as practical, and writes the translated file beside the source using `_en` or `_es` suffixes.
 
 ## What it does
@@ -28,6 +30,7 @@ The pipeline is:
 
 - **Input formats:** PDF, DOCX, Markdown, PNG, JPG, JPEG, WebP, TIFF, and BMP.
 - **Scanned PDF support:** pages without a text layer are rasterized and OCR'd with EasyOCR.
+- **OCR reference output:** OCR-based inputs also keep a full Markdown copy of the extracted source text in the original detected language for review and traceability.
 - **Heading and table preservation:** DOCX headings and tables are mapped into Markdown; text PDFs use PyMuPDF's Markdown extraction when available.
 - **Front matter safety:** YAML front matter in Markdown files is preserved unchanged.
 - **Code fence safety:** fenced code blocks are excluded from translation.
@@ -48,6 +51,11 @@ Outputs are written **next to the source file**, using the **target language suf
 Embedded image exports go to:
 
 - `document_assets/`
+
+For OCR-based inputs such as scanned PDFs and images, the tool also writes a Markdown reference file in the original detected language, for example:
+
+- `document_es.md` for the OCR source text
+- `document_en.md` for the translated output
 
 ## Architecture
 

@@ -19,7 +19,9 @@ def _page_to_rgb(page: fitz.Page, dpi: int = 200) -> np.ndarray:
     return np.asarray(im)
 
 
-def _extract_images(doc: fitz.Document, page: fitz.Page, assets_dir: Path, page_index: int) -> list[str]:
+def _extract_images(
+    doc: fitz.Document, page: fitz.Page, assets_dir: Path, page_index: int
+) -> list[str]:
     assets_dir.mkdir(parents=True, exist_ok=True)
     rel_refs: list[str] = []
     for i, img in enumerate(page.get_images(full=True)):
@@ -38,11 +40,14 @@ def _extract_images(doc: fitz.Document, page: fitz.Page, assets_dir: Path, page_
     return rel_refs
 
 
-def extract_pdf(path: Path, force_ocr: bool = False, gpu: bool = False) -> ExtractResult:
+def extract_pdf(
+    path: Path, force_ocr: bool = False, gpu: bool = False
+) -> ExtractResult:
     stem = path.stem
     parent = path.parent
     assets_dir = parent / f"{stem}_assets"
     asset_paths: list[Path] = []
+    used_ocr = False
 
     doc = fitz.open(path)
     parts: list[str] = []
@@ -64,6 +69,7 @@ def extract_pdf(path: Path, force_ocr: bool = False, gpu: bool = False) -> Extra
             use_ocr = force_ocr or len(plain.strip()) < MIN_TEXT_CHARS
 
             if use_ocr:
+                used_ocr = True
                 rgb = _page_to_rgb(page)
                 ocr_text = ocr_rgb_array(rgb, gpu=gpu)
                 block = f"## Page {page_index + 1}\n\n{ocr_text}\n"
@@ -84,7 +90,12 @@ def extract_pdf(path: Path, force_ocr: bool = False, gpu: bool = False) -> Extra
         if not full.strip():
             full = "_(empty PDF)_"
         if asset_paths:
-            return ExtractResult(markdown=full, assets_dir=assets_dir, asset_paths=asset_paths)
-        return ExtractResult(markdown=full)
+            return ExtractResult(
+                markdown=full,
+                assets_dir=assets_dir,
+                asset_paths=asset_paths,
+                used_ocr=used_ocr,
+            )
+        return ExtractResult(markdown=full, used_ocr=used_ocr)
     finally:
         doc.close()

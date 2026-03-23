@@ -11,3 +11,17 @@ __pycache__/
 *_en.md
 *_es.md
 El Secreto de Ferina y Fredo.pdf
+
+# Local working document folders
+source/
+sources/
+target/
+targets/
+input/
+inputs/
+output/
+outputs/
+working/
+workspace/
+tmp/
+temp/

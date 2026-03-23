@@ -7,7 +7,7 @@ _FENCED_BLOCK = re.compile(r"```[\s\S]*?```", re.MULTILINE)
 
 
 def split_front_matter(text: str) -> tuple[str | None, str]:
-    """If YAML front matter exists (--- ... ---), return (front_matter, body); else (None, full)."""
+    """Return (front_matter, body) if YAML front matter exists, else (None, full)."""
     if not text.startswith("---"):
         return None, text
     lines = text.splitlines()

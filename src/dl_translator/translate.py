@@ -15,7 +15,8 @@ def get_translator() -> "Translator":
     key = os.environ.get("DEEPL_AUTH_KEY")
     if not key or not key.strip():
         raise RuntimeError(
-            "DEEPL_AUTH_KEY is not set. Copy .env.example to .env and add your DeepL API key."
+            "DEEPL_AUTH_KEY is not set. Copy .env.example"
+            " to .env and add your DeepL API key."
         )
     return deepl.Translator(key.strip())
 
@@ -29,27 +30,20 @@ def normalize_target_for_deepl(lang: str) -> str:
     raise ValueError(f"Unsupported target language: {lang!r} (use EN or ES)")
 
 
-def resolve_target_lang(
-    translator: "Translator",
-    sample_text: str,
-    explicit_target: str | None,
-) -> str:
-    if explicit_target:
-        return normalize_target_for_deepl(explicit_target)
+def detect_source_lang(translator: "Translator", sample_text: str) -> str:
+    """Detect source language via DeepL. Returns 'EN' or 'ES'."""
     sample = sample_text.strip()
     if not sample:
-        return "EN-US"
-    chunk = sample[:5000]
+        return "EN"
+    chunk = sample[:1000]
     result = translator.translate_text(chunk, target_lang="EN-US")
     code = getattr(result, "detected_source_lang", None)
     if code is None:
-        return "EN-US"
+        return "EN"
     c = str(code).upper()
-    if c.startswith("EN"):
-        return "ES"
     if c.startswith("ES"):
-        return "EN-US"
-    return "EN-US"
+        return "ES"
+    return "EN"
 
 
 def _split_chunks(text: str, max_chars: int = _MAX_CHARS_PER_REQUEST) -> list[str]:

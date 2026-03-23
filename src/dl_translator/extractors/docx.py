@@ -82,7 +82,13 @@ def _save_inline_shape(shape, assets_dir: Path, index: int) -> str:
     return name
 
 
-def _append_drawings(parts: list[str], paragraph: Paragraph, stem: str, saved_names: list[str], shape_idx: list[int]) -> None:
+def _append_drawings(
+    parts: list[str],
+    paragraph: Paragraph,
+    stem: str,
+    saved_names: list[str],
+    shape_idx: list[int],
+) -> None:
     n = _drawing_count(paragraph)
     for _ in range(n):
         if shape_idx[0] < len(saved_names):
@@ -91,7 +97,13 @@ def _append_drawings(parts: list[str], paragraph: Paragraph, stem: str, saved_na
             shape_idx[0] += 1
 
 
-def _append_drawings_from_table(parts: list[str], table: Table, stem: str, saved_names: list[str], shape_idx: list[int]) -> None:
+def _append_drawings_from_table(
+    parts: list[str],
+    table: Table,
+    stem: str,
+    saved_names: list[str],
+    shape_idx: list[int],
+) -> None:
     for row in table.rows:
         for cell in row.cells:
             for p in cell.paragraphs:
@@ -130,5 +142,7 @@ def extract_docx(path: Path) -> ExtractResult:
     md = "".join(parts).strip() + "\n"
     asset_paths = [assets_dir / n for n in saved_names] if saved_names else []
     if asset_paths:
-        return ExtractResult(markdown=md, assets_dir=assets_dir, asset_paths=asset_paths)
+        return ExtractResult(
+            markdown=md, assets_dir=assets_dir, asset_paths=asset_paths
+        )
     return ExtractResult(markdown=md)

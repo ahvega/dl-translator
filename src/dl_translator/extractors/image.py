@@ -14,4 +14,4 @@ def extract_image(path: Path, gpu: bool = False) -> ExtractResult:
     arr = np.asarray(img)
     text = ocr_rgb_array(arr, gpu=gpu)
     md = "# OCR\n\n" + text if text else "# OCR\n\n_(no text detected)_"
-    return ExtractResult(markdown=md)
+    return ExtractResult(markdown=md, used_ocr=True)

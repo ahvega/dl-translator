@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 
 from dl_translator.discovery import discover_files, has_glob_pattern
+from dl_translator.extractors.common import ExtractResult
 from dl_translator.extractors.docx import extract_docx
 from dl_translator.extractors.image import extract_image
 from dl_translator.extractors.md import extract_markdown_file
@@ -17,8 +18,9 @@ from dl_translator.extractors.pdf import extract_pdf
 from dl_translator.md_translate import translate_full_markdown
 from dl_translator.output_docx import markdown_to_docx
 from dl_translator.translate import (
+    detect_source_lang,
     get_translator,
-    resolve_target_lang,
+    normalize_target_for_deepl,
     translate_text_chunks,
 )
 
@@ -42,16 +44,16 @@ def _suffix_for_target(lang: str) -> str:
     return "en"
 
 
-def _extract_to_markdown(path: Path, force_ocr: bool, gpu: bool) -> str:
+def _extract_to_markdown(path: Path, force_ocr: bool, gpu: bool) -> ExtractResult:
     ext = path.suffix.lower()
     if ext == ".pdf":
-        return extract_pdf(path, force_ocr=force_ocr, gpu=gpu).markdown
+        return extract_pdf(path, force_ocr=force_ocr, gpu=gpu)
     if ext == ".docx":
-        return extract_docx(path).markdown
+        return extract_docx(path)
     if ext in (".md", ".markdown"):
-        return extract_markdown_file(path).markdown
+        return extract_markdown_file(path)
     if ext in (".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff", ".bmp"):
-        return extract_image(path, gpu=gpu).markdown
+        return extract_image(path, gpu=gpu)
     raise typer.BadParameter(f"Unsupported file type: {path}")
 
 
@@ -79,7 +81,10 @@ def run(
         None,
         "--format",
         "-f",
-        help="Output: md or docx. If omitted in an interactive terminal, you will be prompted.",
+        help=(
+            "Output: md or docx. If omitted in an"
+            " interactive terminal, you will be prompted."
+        ),
     ),
     no_recursive: bool = typer.Option(
         False,
@@ -114,7 +119,10 @@ def run(
     extract_only: bool = typer.Option(
         False,
         "--extract-only",
-        help="Convert to Markdown only (no translation). Writes *_extract.md next to source.",
+        help=(
+            "Convert to Markdown only (no translation)."
+            " Writes *_extract.md next to source."
+        ),
     ),
 ) -> None:
     """Translate documents between English and Spanish using the DeepL API."""
@@ -133,8 +141,10 @@ def run(
         if p.strip() and not has_glob_pattern(p)
     ):
         console.print(
-            "[yellow]Note:[/yellow] Recursive folder discovery is [bold]on[/bold] by default "
-            "(subfolders included). Use [bold]--no-recursive[/bold] to limit to a single folder."
+            "[yellow]Note:[/yellow] Recursive folder discovery"
+            " is [bold]on[/bold] by default (subfolders"
+            " included). Use [bold]--no-recursive[/bold]"
+            " to limit to a single folder."
         )
 
     fmt = _resolve_output_format(output_format)
@@ -155,17 +165,32 @@ def run(
             md = _extract_to_markdown(path, force_ocr=force_ocr, gpu=gpu)
             if extract_only:
                 out = path.parent / f"{path.stem}_extract.md"
-                out.write_text(md, encoding="utf-8")
+                out.write_text(md.markdown, encoding="utf-8")
                 console.print(f"[green]OK[/green] {path} -> {out}")
                 continue
 
             assert translator is not None
-            target = resolve_target_lang(translator, md, target_lang)
+            need_detection = not target_lang or md.used_ocr
+            source = (
+                detect_source_lang(translator, md.markdown) if need_detection else None
+            )
+            if target_lang:
+                target = normalize_target_for_deepl(target_lang)
+            else:
+                target = "ES" if source == "ES" else "EN-US"
+
+            if md.used_ocr:
+                source_suf = _suffix_for_target(source)
+                source_md_path = path.parent / f"{path.stem}_{source_suf}.md"
+                source_md_path.write_text(md.markdown, encoding="utf-8")
+                console.print(
+                    f"[green]OK[/green] {path} -> {source_md_path} (OCR source)"
+                )
 
             def chunk_fn(s: str) -> str:
                 return translate_text_chunks(translator, s, target_lang=target)
 
-            translated = translate_full_markdown(md, chunk_fn)
+            translated = translate_full_markdown(md.markdown, chunk_fn)
             suf = _suffix_for_target(target)
             base = path.parent / f"{path.stem}_{suf}"
 
