@@ -55,3 +55,7 @@ The pipeline flows: **discovery → extraction → markdown protection → trans
 - Extractors produce intermediate Markdown; translation operates on that Markdown representation, not on the original format.
 - Output files are written next to the source with `_en`/`_es` suffixes. Asset images go to `{stem}_assets/`.
 - Tests use fake/stub translators (simple string prefix functions) to avoid calling DeepL.
+
+## Claude Code skill
+
+A `/translate-file` skill is available at `.claude/skills/translate-file/`. When working in this repo, Claude Code auto-discovers it. For global use, copy the folder to `~/.claude/skills/translate-file/`. See the skill's README.md for installation options.

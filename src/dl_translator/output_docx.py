@@ -8,10 +8,10 @@ from docx.oxml.ns import qn
 
 def _set_run_font_arial(run) -> None:
     run.font.name = "Arial"
-    rfonts = run._element.rPr.rFonts if run._element.rPr is not None else None
+    rpr = run._element.get_or_add_rPr()
+    rfonts = rpr.rFonts
     if rfonts is None:
-        run._element.get_or_add_rPr().get_or_add_rFonts()
-        rfonts = run._element.rPr.rFonts
+        rfonts = rpr.get_or_add_rFonts()
     rfonts.set(qn("w:ascii"), "Arial")
     rfonts.set(qn("w:hAnsi"), "Arial")
     rfonts.set(qn("w:eastAsia"), "Arial")
@@ -24,6 +24,14 @@ def _set_paragraphs_font_arial(paragraphs) -> None:
             _set_run_font_arial(run)
 
 
+def _set_table_font_arial(table) -> None:
+    for row in table.rows:
+        for cell in row.cells:
+            _set_paragraphs_font_arial(cell.paragraphs)
+            for nested_table in cell.tables:
+                _set_table_font_arial(nested_table)
+
+
 def _enforce_arial_font(output_path: Path) -> None:
     doc = Document(output_path)
 
@@ -31,7 +39,9 @@ def _enforce_arial_font(output_path: Path) -> None:
         normal = doc.styles["Normal"]
         normal.font.name = "Arial"
         rpr = normal._element.get_or_add_rPr()
-        rfonts = rpr.get_or_add_rFonts()
+        rfonts = rpr.rFonts
+        if rfonts is None:
+            rfonts = rpr.get_or_add_rFonts()
         rfonts.set(qn("w:ascii"), "Arial")
         rfonts.set(qn("w:hAnsi"), "Arial")
         rfonts.set(qn("w:eastAsia"), "Arial")
@@ -40,9 +50,7 @@ def _enforce_arial_font(output_path: Path) -> None:
     _set_paragraphs_font_arial(doc.paragraphs)
 
     for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                _set_paragraphs_font_arial(cell.paragraphs)
+        _set_table_font_arial(table)
 
     for section in doc.sections:
         _set_paragraphs_font_arial(section.header.paragraphs)

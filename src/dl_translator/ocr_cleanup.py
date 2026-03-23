@@ -106,7 +106,17 @@ def _clean_text_segment(text: str, language: str) -> str:
     return _TOKEN_RE.sub(replace, text)
 
 
-def clean_ocr_markdown(markdown: str, language: str) -> str:
+def clean_ocr_markdown(
+    markdown: str,
+    language: str,
+    fix_ocr: bool = False,
+) -> str:
+    """Clean OCR text with local corrections and optional Gemini fix.
+
+    Layer 1: rapidfuzz + wordfreq character-substitution fixes.
+    Layer 2 (fix_ocr=True): Gemini Flash for semantic correction.
+    """
+    # Layer 1: local dictionary-based correction
     parts: list[str] = []
     last = 0
     for match in _FENCED_BLOCK.finditer(markdown):
@@ -116,4 +126,12 @@ def clean_ocr_markdown(markdown: str, language: str) -> str:
         last = match.end()
     if last < len(markdown):
         parts.append(_clean_text_segment(markdown[last:], language))
-    return "".join(parts)
+    result = "".join(parts)
+
+    # Layer 2: Gemini Flash post-correction
+    if fix_ocr:
+        from dl_translator.gemini_fix import fix_ocr_with_gemini
+
+        result = fix_ocr_with_gemini(result, language)
+
+    return result
