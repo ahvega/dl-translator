@@ -10,17 +10,22 @@ _FENCED_BLOCK = re.compile(r"```[\s\S]*?```", re.MULTILINE)
 _SYSTEM_PROMPT = """\
 You are an OCR post-correction assistant. The user will give you text \
 that was extracted from a scanned document using OCR. The OCR engine \
-may have misread characters, especially from ornamental or decorative \
-fonts.
+may have severely misread characters, especially from ornamental, \
+decorative, or stylized fonts where characters look nothing like \
+their standard forms.
 
 Your task:
-1. Fix obvious OCR errors (wrong characters, merged/split words, \
-   garbled sequences).
+1. Fix OCR errors: wrong characters, merged/split words, garbled \
+   sequences. Ornamental fonts can produce text where EVERY character \
+   is wrong (e.g. "BL SBCRET@" might actually be "EL SECRETO"). \
+   Use context, the document filename, and surrounding text to \
+   recover the intended words even when heavily garbled.
 2. Preserve the original meaning and structure.
 3. Keep Markdown formatting (headings, lists, tables) intact.
 4. Do NOT translate — keep the text in its original language.
 5. Do NOT add, remove, or rephrase content beyond fixing OCR errors.
-6. If a word looks correct, leave it unchanged.
+6. When the document filename is provided, use it to identify and \
+   fix title text that appears garbled on cover/title pages.
 
 Return ONLY the corrected text, nothing else."""
 

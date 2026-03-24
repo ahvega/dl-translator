@@ -24,6 +24,24 @@ if TYPE_CHECKING:
 
 console = Console(stderr=True)
 
+_MIN_TEXT_CHARS = 40
+
+
+def _pdf_is_scanned(path: Path) -> bool:
+    """Quick check: True if PDF has mostly image-only pages."""
+    import fitz
+
+    doc = fitz.open(path)
+    try:
+        scanned = 0
+        for i in range(min(3, len(doc))):
+            text = doc[i].get_text("text") or ""
+            if len(text.strip()) < _MIN_TEXT_CHARS:
+                scanned += 1
+        return scanned > 0
+    finally:
+        doc.close()
+
 
 @dataclass
 class PipelineState:
@@ -67,6 +85,12 @@ def phase_extract(
             f"  [dim]Phase 1 (extract): skip"
             f" — {state.extract_path.name} exists[/dim]"
         )
+        # Infer used_ocr from file type when resuming
+        ext = state.source.suffix.lower()
+        if ext in (".png", ".jpg", ".jpeg", ".webp", ".tif", ".tiff", ".bmp"):
+            state.used_ocr = True
+        elif ext == ".pdf":
+            state.used_ocr = force_ocr or _pdf_is_scanned(state.source)
         return state.extract_path.read_text(encoding="utf-8")
 
     console.print("  [cyan]Phase 1 (extract):[/cyan] extracting...")
