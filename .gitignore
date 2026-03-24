@@ -25,8 +25,3 @@ working/
 workspace/
 tmp/
 temp/
-
-# Planning and agent working files
-task_plan.md
-findings.md
-progress.md
