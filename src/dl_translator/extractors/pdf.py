@@ -41,7 +41,10 @@ def _extract_images(
 
 
 def extract_pdf(
-    path: Path, force_ocr: bool = False, gpu: bool = False
+    path: Path,
+    force_ocr: bool = False,
+    gpu: bool = False,
+    booklet: bool = False,
 ) -> ExtractResult:
     stem = path.stem
     parent = path.parent
@@ -50,9 +53,18 @@ def extract_pdf(
     used_ocr = False
 
     doc = fitz.open(path)
-    parts: list[str] = []
 
     try:
+        # Auto-detect booklet if not explicitly set
+        if not booklet:
+            from dl_translator.booklet import is_booklet_pdf
+
+            booklet = is_booklet_pdf(doc)
+
+        if booklet:
+            return _extract_booklet_pdf(doc, path, assets_dir, gpu=gpu)
+
+        parts: list[str] = []
         for page_index in range(len(doc)):
             page = doc[page_index]
             img_refs = _extract_images(doc, page, assets_dir, page_index)
@@ -79,7 +91,7 @@ def extract_pdf(
                     if not block.startswith("#"):
                         block = f"## Page {page_index + 1}\n\n{block}"
                 else:
-                    block = f"## Page {page_index + 1}\n\n{plain.strip()}\n"
+                    block = f"## Page {page_index + 1}" f"\n\n{plain.strip()}\n"
 
             for n in img_refs:
                 block += f"\n![]({stem}_assets/{n})\n"
@@ -99,3 +111,56 @@ def extract_pdf(
         return ExtractResult(markdown=full, used_ocr=used_ocr)
     finally:
         doc.close()
+
+
+def _extract_booklet_pdf(
+    doc: fitz.Document,
+    path: Path,
+    assets_dir: Path,
+    gpu: bool = False,
+) -> ExtractResult:
+    """Extract a booklet PDF by splitting pages and reordering."""
+    from dl_translator.booklet import split_and_ocr_booklet
+    from dl_translator.paragraph_join import join_markdown_paragraphs
+
+    stem = path.stem
+    pages = split_and_ocr_booklet(doc, gpu=gpu)
+
+    # Separate numbered and unnumbered pages
+    numbered = [(n, t) for n, t in pages if n is not None]
+    unnumbered = [(n, t) for n, t in pages if n is None]
+
+    parts: list[str] = []
+
+    # Add unnumbered pages first (covers, title pages)
+    for i, (_, text) in enumerate(unnumbered):
+        parts.append(f"## Cover {i + 1}\n\n{text}\n")
+
+    # Add numbered pages in order
+    for pg_num, text in numbered:
+        parts.append(f"## Page {pg_num}\n\n{text}\n")
+
+    # Export embedded images
+    asset_paths: list[Path] = []
+    for page_index in range(len(doc)):
+        page = doc[page_index]
+        img_refs = _extract_images(doc, page, assets_dir, page_index)
+        for name in img_refs:
+            asset_paths.append(assets_dir / name)
+            parts.append(f"![]({stem}_assets/{name})\n")
+
+    full = "\n\n---\n\n".join(parts)
+    if not full.strip():
+        full = "_(empty PDF)_"
+
+    # Apply paragraph joining
+    full = join_markdown_paragraphs(full)
+
+    if asset_paths:
+        return ExtractResult(
+            markdown=full,
+            assets_dir=assets_dir,
+            asset_paths=asset_paths,
+            used_ocr=True,
+        )
+    return ExtractResult(markdown=full, used_ocr=True)
