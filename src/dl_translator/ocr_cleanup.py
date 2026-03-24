@@ -110,6 +110,7 @@ def clean_ocr_markdown(
     markdown: str,
     language: str,
     fix_ocr: bool = False,
+    source_filename: str | None = None,
 ) -> str:
     """Clean OCR text with local corrections and optional Gemini fix.
 
@@ -132,6 +133,6 @@ def clean_ocr_markdown(
     if fix_ocr:
         from dl_translator.gemini_fix import fix_ocr_with_gemini
 
-        result = fix_ocr_with_gemini(result, language)
+        result = fix_ocr_with_gemini(result, language, source_filename=source_filename)
 
     return result

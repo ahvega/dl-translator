@@ -67,6 +67,7 @@ def fix_ocr_with_gemini(
     text: str,
     language: str,
     low_confidence_hint: str | None = None,
+    source_filename: str | None = None,
 ) -> str:
     """Send OCR text to Gemini Flash for correction.
 
@@ -78,6 +79,12 @@ def fix_ocr_with_gemini(
 
     lang_hint = _get_language_hint(language)
     user_msg = f"Language: {lang_hint}\n\n"
+    if source_filename:
+        user_msg += (
+            f'The document filename is "{source_filename}".'
+            " This is likely the title of the document and"
+            " can help you recover garbled title text.\n\n"
+        )
     if low_confidence_hint:
         user_msg += (
             "The following words had low OCR confidence"

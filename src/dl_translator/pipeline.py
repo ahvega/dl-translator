@@ -114,7 +114,12 @@ def phase_ocr_clean(
     console.print("  [cyan]Phase 2 (OCR clean):[/cyan] correcting...")
     from dl_translator.ocr_cleanup import clean_ocr_markdown
 
-    cleaned = clean_ocr_markdown(raw_md, state.source_lang, fix_ocr=fix_ocr)
+    cleaned = clean_ocr_markdown(
+        raw_md,
+        state.source_lang,
+        fix_ocr=fix_ocr,
+        source_filename=state.stem,
+    )
     state.source_md_path.write_text(cleaned, encoding="utf-8")
     console.print(
         f"  [green]Phase 2 (OCR clean): done[/green]" f" -> {state.source_md_path.name}"

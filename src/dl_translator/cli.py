@@ -165,8 +165,7 @@ def run(
                     raise typer.Exit(code=1)
         if extract_failures:
             console.print(
-                f"[yellow]Completed with"
-                f" {extract_failures} error(s).[/yellow]"
+                f"[yellow]Completed with" f" {extract_failures} error(s).[/yellow]"
             )
         raise typer.Exit(code=1 if extract_failures else 0)
 
