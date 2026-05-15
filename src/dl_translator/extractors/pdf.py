@@ -48,7 +48,7 @@ def extract_pdf(
 ) -> ExtractResult:
     stem = path.stem
     parent = path.parent
-    assets_dir = parent / f"{stem}_assets"
+    assets_dir = parent / ".work" / "input" / f"{stem}_assets"
     asset_paths: list[Path] = []
     used_ocr = False
 
@@ -94,7 +94,7 @@ def extract_pdf(
                     block = f"## Page {page_index + 1}" f"\n\n{plain.strip()}\n"
 
             for n in img_refs:
-                block += f"\n![]({stem}_assets/{n})\n"
+                block += f"\n![](.work/input/{stem}_assets/{n})\n"
 
             parts.append(block)
 
@@ -147,7 +147,7 @@ def _extract_booklet_pdf(
         img_refs = _extract_images(doc, page, assets_dir, page_index)
         for name in img_refs:
             asset_paths.append(assets_dir / name)
-            parts.append(f"![]({stem}_assets/{name})\n")
+            parts.append(f"![](.work/input/{stem}_assets/{name})\n")
 
     full = "\n\n---\n\n".join(parts)
     if not full.strip():

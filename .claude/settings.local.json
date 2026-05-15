@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(py *)",
+      "PowerShell(Get-ChildItem -Path \"E:\\\\MyDevTools\\\\dl-translator\\\\.venv\\\\Scripts\\\\\" | Where-Object {$_.Name -match \"python\"})",
+      "PowerShell(E:\\\\MyDevTools\\\\dl-translator\\\\.venv\\\\Scripts\\\\python.exe -c \"import sys; print\\('venv version:', sys.version_info[:3]\\); print\\('venv executable:', sys.executable\\)\")",
+      "PowerShell(python3 -c \"import sys, os; print\\('Python 3 is:', sys.executable\\)\")",
+      "Bash(py *)"
+    ]
+  }
+}

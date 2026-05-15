@@ -1,14 +1,15 @@
 """Phased translation pipeline with checkpoint-based resumption.
 
 Phases for OCR-based inputs:
-  1. extract   - PDF pages -> page images + raw OCR -> {stem}_extract.md
-  2. ocr_clean - Local + Gemini OCR correction    -> {stem}_{src}.md
-  3. translate - DeepL translation                 -> {stem}_{tgt}.md
+  1. extract   - PDF pages -> page images + raw OCR -> .work/output/{stem}_extract.md
+  2. ocr_clean - Local + Gemini OCR correction    -> .work/output/{stem}_{src}.md
+  3. translate - DeepL translation                 -> {stem}_{tgt}.md  (final output)
   4. review    - Gemini semantic review of translation -> overwrite {stem}_{tgt}.md
   5. docx      - Markdown -> DOCX conversion       -> {stem}_{tgt}.docx
 
 For non-OCR inputs, phases 1-2 collapse and phase 4 is skipped.
 Each phase writes its output file; re-runs detect existing files and skip.
+Embedded PDF images are stored under .work/input/{stem}_assets/.
 """
 
 from __future__ import annotations
@@ -55,13 +56,17 @@ class PipelineState:
     used_ocr: bool = False
 
     @property
+    def work_output_dir(self) -> Path:
+        return self.parent / ".work" / "output"
+
+    @property
     def extract_path(self) -> Path:
-        return self.parent / f"{self.stem}_extract.md"
+        return self.work_output_dir / f"{self.stem}_extract.md"
 
     @property
     def source_md_path(self) -> Path:
         suf = "es" if self.source_lang.upper().startswith("ES") else "en"
-        return self.parent / f"{self.stem}_{suf}.md"
+        return self.work_output_dir / f"{self.stem}_{suf}.md"
 
     @property
     def target_md_path(self) -> Path:
@@ -250,6 +255,8 @@ def run_pipeline(
     )
 
     console.print(f"\n[bold]{path}[/bold]")
+
+    state.work_output_dir.mkdir(parents=True, exist_ok=True)
 
     # Phase 1: Extract
     raw_md = phase_extract(state, force_ocr=force_ocr, gpu=gpu)

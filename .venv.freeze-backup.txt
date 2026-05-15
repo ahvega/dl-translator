@@ -1,0 +1,4 @@
+# Backup taken before rebuilding E:\MyDevTools\dl-translator\.venv
+# source: pyproject.toml
+# recorded version: (3, 14, 3)
+# recorded home: C:\Python314
