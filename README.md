@@ -241,6 +241,7 @@ Each token is checked against language-specific word frequency databases. If a s
 ### Layer 2: Gemini Flash AI correction (opt-in with `--fix-ocr`)
 
 For text that local correction can't fix (ornamental fonts, garbled sequences), the text is sent to Gemini 2.0 Flash with:
+
 - A system prompt specialized for OCR post-correction
 - The source document filename as a title hint (helps recover garbled title pages)
 - Language context
